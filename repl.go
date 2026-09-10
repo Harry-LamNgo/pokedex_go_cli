@@ -12,6 +12,9 @@ Loops back to step 1 and waits for next input
 package main
 
 import (
+	"bufio"
+	"fmt"
+	"os"
 	"strings"
 )
 
@@ -19,5 +22,42 @@ func cleanInput(text string) []string {
 	var words []string
 	words = strings.Fields(strings.ToLower(text))
 	return words
-	// return []string{}
+}
+
+func runREPL() {
+	// Combine both bufio.NewScanner and os.Stdin--> whenever you call scanner.Scan, it will block and wait for User's input
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		// Need to show "Pokedex > " prompt everytime a command is executed -> wrap that in manual for loop
+		fmt.Print("Pokedex > ")
+
+		var inputText string
+		if scanner.Scan() == false {
+			break
+		}
+		inputText = scanner.Text()
+
+		// Process input -> and take 1st word
+		cleanInput := cleanInput(inputText)[0]
+
+		// Get all supported command of Pokedex
+		commands := getSupportedCommands()
+
+		cmd, found := commands[cleanInput]
+		if found == false {
+			fmt.Println("Unknown command")
+			continue
+		} else {
+			if err := cmd.callback(); err != nil {
+				fmt.Println("Error:", err)
+			}
+			continue
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("reading standard input: %v", err)
+	}
+
 }
