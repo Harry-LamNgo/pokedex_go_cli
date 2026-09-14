@@ -13,10 +13,19 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 )
+
+type config struct {
+	commands    map[string]cliCommand
+	nextURL     *string
+	previousURL *string
+}
 
 func cleanInput(text string) []string {
 	var words []string
@@ -24,7 +33,44 @@ func cleanInput(text string) []string {
 	return words
 }
 
-func runREPL() {
+func fetchLocationArea(url string, cfg *config) error {
+	// GET Method - fetch the data from URL
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("Failed to fetch Pokemon Location-area: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the body of fetched data
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("Failed to read the data: %w", err)
+	}
+
+	// Unmarshal the data -- the data in this case is a single struct
+	var dataResponse LocationAreaResponse
+	if err := json.Unmarshal(data, &dataResponse); err != nil {
+		return err
+	}
+
+	// Track the Previous URL and Next URL
+	cfg.previousURL = dataResponse.Previous
+	cfg.nextURL = dataResponse.Next
+
+	// Handle empty dataResponse.Results
+	if len(dataResponse.Results) == 0 {
+		fmt.Println("No location areas found")
+		return nil
+	}
+
+	// Iterate and print location-area
+	for _, area := range dataResponse.Results {
+		fmt.Println(area.Name)
+	}
+	return nil
+}
+
+func runREPL(cfg *config) {
 	// Combine both bufio.NewScanner and os.Stdin--> whenever you call scanner.Scan, it will block and wait for User's input
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -41,15 +87,12 @@ func runREPL() {
 		// Process input -> and take 1st word
 		cleanInput := cleanInput(inputText)[0]
 
-		// Get all supported command of Pokedex
-		commands := getSupportedCommands()
-
-		cmd, found := commands[cleanInput]
+		cmd, found := cfg.commands[cleanInput]
 		if found == false {
 			fmt.Println("Unknown command")
 			continue
 		} else {
-			if err := cmd.callback(); err != nil {
+			if err := cmd.callback(cfg); err != nil {
 				fmt.Println("Error:", err)
 			}
 			continue

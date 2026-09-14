@@ -1,5 +1,9 @@
 package main
 
 func main() {
-	runREPL()
+	// Initialize Config (cfg) -- Get all supported command of Pokedex
+	cfg := config{
+		commands: getSupportedCommands(),
+	}
+	runREPL(&cfg)
 }
