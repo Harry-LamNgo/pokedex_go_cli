@@ -13,61 +13,24 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strings"
+
+	"github.com/Harry-LamNgo/pokdex_go_cli/internal/pokeapi"
 )
 
 type config struct {
-	commands    map[string]cliCommand
-	nextURL     *string
-	previousURL *string
+	commands      map[string]cliCommand
+	pokeapiClient pokeapi.Client
+	nextURL       *string
+	previousURL   *string
 }
 
 func cleanInput(text string) []string {
 	var words []string
 	words = strings.Fields(strings.ToLower(text))
 	return words
-}
-
-func fetchLocationArea(url string, cfg *config) error {
-	// GET Method - fetch the data from URL
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("Failed to fetch Pokemon Location-area: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read the body of fetched data
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Failed to read the data: %w", err)
-	}
-
-	// Unmarshal the data -- the data in this case is a single struct
-	var dataResponse LocationAreaResponse
-	if err := json.Unmarshal(data, &dataResponse); err != nil {
-		return err
-	}
-
-	// Track the Previous URL and Next URL
-	cfg.previousURL = dataResponse.Previous
-	cfg.nextURL = dataResponse.Next
-
-	// Handle empty dataResponse.Results
-	if len(dataResponse.Results) == 0 {
-		fmt.Println("No location areas found")
-		return nil
-	}
-
-	// Iterate and print location-area
-	for _, area := range dataResponse.Results {
-		fmt.Println(area.Name)
-	}
-	return nil
 }
 
 func runREPL(cfg *config) {

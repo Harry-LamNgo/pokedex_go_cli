@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
@@ -10,17 +11,6 @@ type cliCommand struct {
 	name        string
 	description string
 	callback    func(*config) error
-}
-
-// Create structure of PokeAPI-location-area
-type LocationAreaResponse struct {
-	Count    int     `json:"count"`
-	Next     *string `json:"next"`
-	Previous *string `json:"previous"`
-	Results  []struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"results"`
 }
 
 // Method wrap commands in a function --> this function only run after main() run
@@ -73,24 +63,44 @@ func commandHelp(cfg *config) error {
 }
 
 func commandMap(cfg *config) error {
-	locationAreaURL := "https://pokeapi.co/api/v2/location-area/"
-
-	if cfg.nextURL != nil {
-		locationAreaURL = *cfg.nextURL
+	// Do the Fetch Locations from pokeAPI -> with nextURL (if nextURL is nil -> FetchLocations handles that using base URL)
+	locationResp, err := cfg.pokeapiClient.FetchLocations(cfg.nextURL)
+	if err != nil {
+		return err
 	}
 
-	fetchLocationArea(locationAreaURL, cfg)
+	// Track the Previous URL and Next URL
+	cfg.previousURL = locationResp.Previous
+	cfg.nextURL = locationResp.Next
+
+	// Iterate and print location-area
+	for _, area := range locationResp.Results {
+		fmt.Println(area.Name)
+	}
 
 	return nil
 }
 
 func commandMapb(cfg *config) error {
-
+	// Check the previous URL exist
 	if cfg.previousURL == nil {
-		fmt.Println("you're on the first page")
-		return nil
+		return errors.New("you're on the first page")
 	}
-	return fetchLocationArea(*cfg.previousURL, cfg)
+
+	locationResp, err := cfg.pokeapiClient.FetchLocations(cfg.previousURL)
+	if err != nil {
+		return err
+	}
+
+	// Track the Previous URL and Next URL
+	cfg.previousURL = locationResp.Previous
+	cfg.nextURL = locationResp.Next
+
+	for _, area := range locationResp.Results {
+		fmt.Println(area.Name)
+	}
+
+	return nil
 }
 
 // Method declare Global var -- Go auto runs init() before main() -> add all commands into one map and shared everywhere in package main
