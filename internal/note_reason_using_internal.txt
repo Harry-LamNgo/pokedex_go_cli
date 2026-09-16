@@ -1,0 +1,23 @@
+Internal Package in GoLang
+
+Reason: Separation of Concerns --> organize code into layers
+
+pokedex_go_cli/
+|__go.mod
+|__main.go
+|__commands.go
+|__internal/     <========== everything inside this directory cannot be imported by Go
+    |__pokeapi/  <========== everything inside pokeapi is the code how my program talks to PokeAPI
+       |__file_related_pokeapi
+
+Whenever the program need to change API other than pokeapi
+- I can delete whole folder pokeapi without concern about missing code
+- in my main program (code) only need to import whole package API I need - easy to refactor or rename the package
+
+
+Put code in Internal Package
+- It shrinks my public API surface: whoever import my package, GoLang promise not to break every files in internal
+- Anything exported from non-Internal package is imported and use freely
+- It encourages clean boundaries: developers need to think what goes in Internal and what should stay in main
+- This helps make a better separation
+--> in this case, internal/pokeapi --- HTTP calls, JSON structs, caching. It knows nothing about REPLs or commands

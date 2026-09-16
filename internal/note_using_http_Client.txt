@@ -1,0 +1,19 @@
+Note: I have refactor the code FROM http.Get TO http.Client and http.NewRequest
+
+The reason about this refactor is:
+- I can not use http.Get() for multiple-request API.
+- http.Get() is mostly used for debugging, quick, one-off requests.
+- I need to build my own Client when I need SHARED, REUSEABLE state across multiple request to the same API.
+
+Why, in detail:
+1. State needs a home. Anything you want to persist or share across API calls
+- timeouts, auth tokens, a cache, ... - needs to live somewhere (and that is a struct you created)
+A bare function http.Get() has nowhere to store that state between calls.
+
+2. Configuration should happen once, not per-call. Do not setup logic like auth, timeout (which you don't want repeat)
+everytime call the API --> create a configure them in a constructor then reuse it.
+
+3. Third-party APIs are rarely "one and done". API always to be called everytime when need.
+So always create your own Client, not once call like http.Get()
+
+4. It scales with your needs. Your code/program might be extended in the future - should always create your own Client to save the state.
