@@ -18,11 +18,6 @@ type cliCommand struct {
 
 func getSupportedCommands() map[string]cliCommand {
 	return map[string]cliCommand{
-		"exit": {
-			name:        "exit",
-			description: "Exit the Pokedex",
-			callback:    commandExit,
-		},
 
 		"help": {
 			name:        "help",
@@ -32,7 +27,7 @@ func getSupportedCommands() map[string]cliCommand {
 
 		"map": {
 			name:        "map",
-			description: "Displays the names of 20 location areas in the Pokemon world",
+			description: "Displays the names of next 20 location areas in the Pokemon world",
 			callback:    commandMap,
 		},
 
@@ -40,6 +35,12 @@ func getSupportedCommands() map[string]cliCommand {
 			name:        "mapb",
 			description: "Displays the names of previous 20 location areas in the Pokemon world",
 			callback:    commandMapb,
+		},
+
+		"exit": {
+			name:        "exit",
+			description: "Exit the Pokedex",
+			callback:    commandExit,
 		},
 	}
 }
