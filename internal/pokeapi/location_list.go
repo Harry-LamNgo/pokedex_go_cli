@@ -18,29 +18,38 @@ func (c *Client) FetchLocations(pageURL *string) (LocationAreaResponse, error) {
 		url = *pageURL
 	}
 
-	// New Request - GET Method - send request to URL
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return LocationAreaResponse{}, err
-	}
+	// Check cacheData before exist - if yes skip request and use the cacheDat to unmarshal
 
-	// Do - Get the response from URL
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return LocationAreaResponse{}, fmt.Errorf("Failed to fetch Pokemon Location-area: %w", err)
-	}
+	cacheData, exist := c.cache.Get(url)
+	if !exist {
+		// New Request - GET Method - send request to URL
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return LocationAreaResponse{}, err
+		}
 
-	defer resp.Body.Close()
+		// Do - Get the response from URL
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return LocationAreaResponse{}, fmt.Errorf("Failed to fetch Pokemon Location-area: %w", err)
+		}
 
-	// Read the body of fetched data
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return LocationAreaResponse{}, fmt.Errorf("Failed to read the data: %w", err)
+		defer resp.Body.Close()
+
+		// Read the body of fetched data
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return LocationAreaResponse{}, fmt.Errorf("Failed to read the data: %w", err)
+		}
+
+		// Add data and url to future cache
+		c.cache.Add(url, data)
+		cacheData = data
 	}
 
 	// Unmarshal the data -- the data in this case is a single struct
 	var dataResponse LocationAreaResponse
-	if err := json.Unmarshal(data, &dataResponse); err != nil {
+	if err := json.Unmarshal(cacheData, &dataResponse); err != nil {
 		return LocationAreaResponse{}, err
 	}
 

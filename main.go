@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	pokeClient := pokeapi.NewCilent(5 * time.Second)
+	pokeClient := pokeapi.NewClient(5*time.Minute, 5*time.Second)
 	// Initialize Config (cfg) -- Get all supported command of Pokedex
 	cfg := config{
 		commands:      getSupportedCommands(),
