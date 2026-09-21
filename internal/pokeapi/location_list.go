@@ -18,7 +18,7 @@ func (c *Client) FetchLocations(pageURL *string) (LocationAreaResponse, error) {
 		url = *pageURL
 	}
 
-	// Check cacheData before exist - if yes skip request and use the cacheDat to unmarshal
+	// Check cacheData exist - if yes skip request and use the cacheData to unmarshal
 
 	cacheData, exist := c.cache.Get(url)
 	if !exist {

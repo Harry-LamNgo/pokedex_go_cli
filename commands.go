@@ -25,6 +25,12 @@ func getSupportedCommands() map[string]cliCommand {
 			callback:    commandHelp,
 		},
 
+		"explore": {
+			name:        "explore",
+			description: "Displays the list of all the Pokémon in target location area",
+			callback:    commandExplore,
+		},
+
 		"map": {
 			name:        "map",
 			description: "Displays the names of next 20 location areas in the Pokemon world",
@@ -101,6 +107,27 @@ func commandMapb(cfg *config) error {
 		fmt.Println(area.Name)
 	}
 
+	return nil
+}
+
+func commandExplore(cfg *config) error {
+	if len(cfg.args) < 1 {
+		return errors.New("explore command requires one specific location-area name to execute")
+	}
+
+	areaName := cfg.args[0]
+	// fmt.Printf("Debug areaName - %q\n", areaName)
+	listPokemonResp, err := cfg.pokeapiClient.FetchPokemons(areaName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Exploring %s ...\n", listPokemonResp.Name)
+	fmt.Println("Found Pokemon:")
+
+	for _, pokemonEncounters := range listPokemonResp.PokemonEncounters {
+		fmt.Println(" - " + pokemonEncounters.Pokemon.Name)
+	}
 	return nil
 }
 

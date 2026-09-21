@@ -25,11 +25,16 @@ type config struct {
 	pokeapiClient pokeapi.Client
 	nextURL       *string
 	previousURL   *string
+	args          []string
 }
 
 func cleanInput(text string) []string {
 	var words []string
 	words = strings.Fields(strings.ToLower(text))
+	// handle case no input text
+	if len(words) == 0 {
+		return nil
+	}
 	return words
 }
 
@@ -47,19 +52,22 @@ func runREPL(cfg *config) {
 		}
 		inputText = scanner.Text()
 
-		// Process input -> and take 1st word
-		cleanInput := cleanInput(inputText)[0]
+		// Process input --> take 1st word of input text as command
+		command := cleanInput(inputText)[0]
 
-		cmd, found := cfg.commands[cleanInput]
+		// From 2nd word of input text as extend argurment for suitable command
+		// Store those arguments in config args
+		cfg.args = cleanInput(inputText)[1:]
+
+		cmd, found := cfg.commands[command]
 		if found == false {
 			fmt.Println("Unknown command")
 			continue
-		} else {
-			if err := cmd.callback(cfg); err != nil {
-				fmt.Println("Error:", err)
-			}
-			continue
 		}
+		if err := cmd.callback(cfg); err != nil {
+			fmt.Println("Error:", err)
+		}
+		continue
 	}
 
 	if err := scanner.Err(); err != nil {
