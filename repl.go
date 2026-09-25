@@ -26,6 +26,7 @@ type config struct {
 	nextURL       *string
 	previousURL   *string
 	args          []string
+	caughtpokemon map[string]pokeapi.CaughtPokemon
 }
 
 func cleanInput(text string) []string {

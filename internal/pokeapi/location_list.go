@@ -48,16 +48,16 @@ func (c *Client) FetchLocations(pageURL *string) (LocationAreaResponse, error) {
 	}
 
 	// Unmarshal the data -- the data in this case is a single struct
-	var dataResponse LocationAreaResponse
-	if err := json.Unmarshal(cacheData, &dataResponse); err != nil {
+	var dataLocationAreaResponse LocationAreaResponse
+	if err := json.Unmarshal(cacheData, &dataLocationAreaResponse); err != nil {
 		return LocationAreaResponse{}, err
 	}
 
-	// Handle empty dataResponse.Results
-	if len(dataResponse.Results) == 0 {
+	// Handle empty dataLocationAreaResponse.Results
+	if len(dataLocationAreaResponse.Results) == 0 {
 		fmt.Println("No location areas found")
 		return LocationAreaResponse{}, nil
 	}
 
-	return dataResponse, nil
+	return dataLocationAreaResponse, nil
 }
