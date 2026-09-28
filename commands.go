@@ -26,6 +26,12 @@ func getSupportedCommands() map[string]cliCommand {
 			callback:    commandHelp,
 		},
 
+		"pokedex": {
+			name:        "pokedex",
+			description: "Displays list of all captured Pokemon",
+			callback:    commandPokedex,
+		},
+
 		"explore": {
 			name:        "explore <target-location-area>",
 			description: "Displays a list of all Pokémon encountered in the target location area.",
@@ -184,6 +190,7 @@ func commandCatch(cfg *config) error {
 	if rand.Float64() < catchChance(pokemonResp.BaseExperience) {
 		cfg.caughtpokemon[targetPokemon] = pokemonResp
 		fmt.Printf("%v was caught!\n", pokemonResp.Name)
+		fmt.Println("You may now inspect it with the inspect command.")
 	} else {
 		fmt.Printf("%v escaped!\n", pokemonResp.Name)
 	}
@@ -218,6 +225,20 @@ Weight: %d
 		fmt.Printf(" - %v\n", poketypes.Type.Name)
 	}
 
+	return nil
+}
+
+func commandPokedex(cfg *config) error {
+	if len(cfg.caughtpokemon) == 0 {
+		fmt.Println("Your Pokedex is empty - Let explore and catch some pokemon")
+		return nil
+	}
+
+	fmt.Println("Your Pokedex:")
+
+	for _, pokemon := range cfg.caughtpokemon {
+		fmt.Printf(" - %v\n", pokemon.Name)
+	}
 	return nil
 }
 
