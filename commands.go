@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"os"
-
-	"github.com/Harry-LamNgo/pokdex_go_cli/internal/pokeapi"
 )
 
 // The structure of command - it must have "name", "description" and "callback" function
@@ -38,6 +36,12 @@ func getSupportedCommands() map[string]cliCommand {
 			name:        "catch <pokemon-name>",
 			description: "Atempt to catch a pokemon",
 			callback:    commandCatch,
+		},
+
+		"inspect": {
+			name:        "inspect <pokemon-name>",
+			description: "Displays captured pokemon information (stats, types, ...)",
+			callback:    commandInspect,
 		},
 
 		"map": {
@@ -131,12 +135,18 @@ func commandExplore(cfg *config) error {
 		return err
 	}
 
+	// Tracking location and Pokemon encountered in that location
+	cfg.lastArea = listPokemonResp.Name
+	cfg.encountered = make(map[string]bool, len(listPokemonResp.PokemonEncounters))
+
 	fmt.Printf("Exploring %s ...\n", listPokemonResp.Name)
 	fmt.Println("Found Pokemon:")
 
 	for _, pokemonEncounters := range listPokemonResp.PokemonEncounters {
+		cfg.encountered[pokemonEncounters.Pokemon.Name] = true
 		fmt.Println(" - " + pokemonEncounters.Pokemon.Name)
 	}
+
 	return nil
 }
 
@@ -147,16 +157,22 @@ func commandCatch(cfg *config) error {
 
 	targetPokemon := cfg.args[0]
 
-	targetPokemonResp, err := cfg.pokeapiClient.FetchTargetPokemon(targetPokemon)
+	if cfg.lastArea == "" {
+		return errors.New("explore an area first with the 'explore' command")
+	}
+
+	if !cfg.encountered[targetPokemon] {
+		return fmt.Errorf("%s is not found in %s", targetPokemon, cfg.lastArea)
+	}
+
+	pokemonResp, err := cfg.pokeapiClient.FetchTargetPokemon(targetPokemon)
 	if err != nil {
 		return err
 	}
 
-	pokemonName := targetPokemonResp.Name
-
 	// Chance to catch Pokemon --> convert to 1.0 float scale
 
-	// chance stays in [~0.1, ~0.9] for every real baseExp value
+	// chance stays in [~0.14, ~0.7] for every real baseExp value
 	// Ex: Blissey has baseExp = 635 -> catch chance = 1 / (1 + 635/100) = ~0.13
 
 	catchChance := func(baseExp int) float64 {
@@ -165,14 +181,41 @@ func commandCatch(cfg *config) error {
 
 	fmt.Printf("Throwing a Pokeball at %s...\n", targetPokemon)
 
-	if rand.Float64() < catchChance(targetPokemonResp.BaseExperience) {
-		cfg.caughtpokemon[pokemonName] = pokeapi.CaughtPokemon{
-			Name: pokemonName,
-		}
-
-		fmt.Printf("%v was caught!\n", pokemonName)
+	if rand.Float64() < catchChance(pokemonResp.BaseExperience) {
+		cfg.caughtpokemon[targetPokemon] = pokemonResp
+		fmt.Printf("%v was caught!\n", pokemonResp.Name)
 	} else {
-		fmt.Printf("%v escaped!\n", pokemonName)
+		fmt.Printf("%v escaped!\n", pokemonResp.Name)
+	}
+
+	return nil
+}
+
+func commandInspect(cfg *config) error {
+	if len(cfg.args) < 1 {
+		return errors.New("inspect command requires one name of captured pokemon to execute")
+	}
+
+	inspectedPokemon := cfg.caughtpokemon[cfg.args[0]]
+
+	if inspectedPokemon.Name == "" {
+		return errors.New("you have not caught that pokemon")
+	}
+
+	fmt.Printf(`
+Name: %v
+Height: %d
+Weight: %d
+`, inspectedPokemon.Name, inspectedPokemon.Height, inspectedPokemon.Weight)
+
+	fmt.Println("Stats:")
+	for _, stats := range inspectedPokemon.Stats {
+		fmt.Printf(" - %v: %v\n", stats.Stat.Name, stats.BaseStat)
+	}
+
+	fmt.Println("Types:")
+	for _, poketypes := range inspectedPokemon.Types {
+		fmt.Printf(" - %v\n", poketypes.Type.Name)
 	}
 
 	return nil

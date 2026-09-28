@@ -50,11 +50,6 @@ func (c *Client) FetchPokemons(areaName string) (PokemonAreaResponse, error) {
 	return dataPokemonAreaResponse, nil
 }
 
-type CaughtPokemon struct {
-	Name           string
-	LocationCaught string
-}
-
 func (c *Client) FetchTargetPokemon(pokemonName string) (PokemonInfoResponse, error) {
 
 	url := baseURL + "/pokemon/" + pokemonName

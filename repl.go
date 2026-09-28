@@ -26,7 +26,10 @@ type config struct {
 	nextURL       *string
 	previousURL   *string
 	args          []string
-	caughtpokemon map[string]pokeapi.CaughtPokemon
+
+	lastArea      string          // cache Last Explore Area
+	encountered   map[string]bool // cache pokemon encounter in last area (True or False)
+	caughtpokemon map[string]pokeapi.PokemonInfoResponse
 }
 
 func cleanInput(text string) []string {
