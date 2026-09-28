@@ -3,7 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"os"
+
+	"github.com/Harry-LamNgo/pokdex_go_cli/internal/pokeapi"
 )
 
 // The structure of command - it must have "name", "description" and "callback" function
@@ -26,9 +29,15 @@ func getSupportedCommands() map[string]cliCommand {
 		},
 
 		"explore": {
-			name:        "explore",
-			description: "Displays the list of all the Pokémon in target location area",
+			name:        "explore <target-location-area>",
+			description: "Displays a list of all Pokémon encountered in the target location area.",
 			callback:    commandExplore,
+		},
+
+		"catch": {
+			name:        "catch <pokemon-name>",
+			description: "Atempt to catch a pokemon",
+			callback:    commandCatch,
 		},
 
 		"map": {
@@ -128,6 +137,44 @@ func commandExplore(cfg *config) error {
 	for _, pokemonEncounters := range listPokemonResp.PokemonEncounters {
 		fmt.Println(" - " + pokemonEncounters.Pokemon.Name)
 	}
+	return nil
+}
+
+func commandCatch(cfg *config) error {
+	if len(cfg.args) < 1 {
+		return errors.New("catch command requires one name of pokemon to execute")
+	}
+
+	targetPokemon := cfg.args[0]
+
+	targetPokemonResp, err := cfg.pokeapiClient.FetchTargetPokemon(targetPokemon)
+	if err != nil {
+		return err
+	}
+
+	pokemonName := targetPokemonResp.Name
+
+	// Chance to catch Pokemon --> convert to 1.0 float scale
+
+	// chance stays in [~0.1, ~0.9] for every real baseExp value
+	// Ex: Blissey has baseExp = 635 -> catch chance = 1 / (1 + 635/100) = ~0.13
+
+	catchChance := func(baseExp int) float64 {
+		return 1.0 / (1.0 + float64(baseExp)/100.0)
+	}
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", targetPokemon)
+
+	if rand.Float64() < catchChance(targetPokemonResp.BaseExperience) {
+		cfg.caughtpokemon[pokemonName] = pokeapi.CaughtPokemon{
+			Name: pokemonName,
+		}
+
+		fmt.Printf("%v was caught!\n", pokemonName)
+	} else {
+		fmt.Printf("%v escaped!\n", pokemonName)
+	}
+
 	return nil
 }
 
